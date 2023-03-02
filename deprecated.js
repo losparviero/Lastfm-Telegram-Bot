@@ -1,7 +1,13 @@
 require("dotenv").config();
-const LastFmNode = require("lastfmapi");
 const { Bot, HttpError, GrammyError } = require("grammy");
 const https = require("https");
+const through = require("through2");
+const util = require("util");
+const LastfmExportStream = require("lastfmexportstream");
+
+// Auth
+
+const API_KEY = process.env.API_KEY;
 
 // Bot
 
@@ -18,13 +24,6 @@ async function responseTime(ctx, next) {
 
 bot.use(responseTime);
 
-// Auth
-
-const lastfm = new LastFmNode({
-  api_key: process.env.API_KEY,
-  secret: process.env.SECRET,
-});
-
 // Commands
 
 bot.command("start", async (ctx) => {
@@ -34,9 +33,11 @@ bot.command("start", async (ctx) => {
       "Content-Type": "application/json",
     },
   };
+
   const body = {
     userId: ctx.from.id,
   };
+
   const req = https.request(
     "https://users-weld.vercel.app/user",
     options,
@@ -58,10 +59,12 @@ bot.command("start", async (ctx) => {
       });
     }
   );
+
   req.on("error", (error) => {
     console.error(error);
     console.log("Contacting API failed");
   });
+
   req.write(JSON.stringify(body));
   req.end();
   await ctx
@@ -105,64 +108,29 @@ bot.on("msg", async (ctx) => {
     });
   } else {
     try {
-      const username = ctx.msg.text;
-      async function getNowPlaying() {
-        return new Promise((resolve, reject) => {
-          lastfm.user.getRecentTracks(
-            {
-              user: username,
-              limit: 1,
-              nowplaying: true,
-            },
-            (err, data) => {
-              if (err) {
-                reject(err);
-              } else {
-                const nowPlaying = data.track[0];
-                resolve(nowPlaying);
-              }
-            }
-          );
-        });
-      }
-      async function getLastPlayed() {
-        return new Promise((resolve, reject) => {
-          lastfm.user.getRecentTracks(
-            {
-              user: username,
-              limit: 5,
-            },
-            (err, data) => {
-              if (err) {
-                reject(err);
-              } else {
-                const tracks = data.track.map(
-                  (track) => `${track.name} by ${track.artist["#text"]}`
-                );
-                resolve(tracks);
-              }
-            }
-          );
-        });
-      }
-      (async () => {
-        try {
-          /*const nowPlaying = await getNowPlaying();
-          await ctx.reply(
-            `Now Playing: ${nowPlaying.name} by ${nowPlaying.artist["#text"]}`
-          );*/
-          const lastPlayed = await getLastPlayed();
-          await ctx.reply(
-            `<b>🎶 Here are <a href="https://last.fm/user/${ctx.msg.text}">${
-              ctx.msg.text
-            }'s</a> recent listens:
-            \n${lastPlayed.join("\n")}</b>`,
-            { parse_mode: "HTML" }
-          );
-        } catch (err) {
-          console.error("Error:", err.message);
+      await ctx.reply(
+        `<b>🎶 Here are <a href="https://last.fm/user/${ctx.msg.text}">${ctx.msg.text}'s</a> recent listens:</b>`,
+        {
+          parse_mode: "HTML",
         }
-      })();
+      );
+
+      const stream = new LastfmExportStream({
+        apiKey: API_KEY,
+        user: ctx.msg.text,
+        reverse: true,
+      });
+      let counter = 0;
+      if (counter < 5) {
+        console.log(track.title);
+        await ctx.reply(`<b>${track.title} - ${track.artist["#text"]}</b>`, {
+          parse_mode: "HTML",
+        });
+        counter++;
+        callback();
+      } else {
+        return;
+      }
     } catch (error) {
       if (error instanceof GrammyError) {
         if (error.message.includes("Forbidden: bot was blocked by the user")) {

@@ -8,11 +8,11 @@ Get recent listens of any profile in Telegram!
 
 1. Clone git repo.
 2. Run ```npm i``` in project folder. This will install the required dependencies.
-3. Populate .env file with bot token & API key.
+3. Populate .env file with bot token & API credentials.
 
 #### Bot token can be obtained from @BotFather.
 
-#### API key can be obtained from Last.fm.
+#### API credentials can be obtained from Last.fm.
 
 
 4. Run ```node bot``` to start the bot.
@@ -31,7 +31,7 @@ Get recent listens of any profile in Telegram!
 
 ### Mechanism
 
-The bot takes uses the lastfmexportstream lib to fetch recently scrobbled tracks.
+The bot takes uses the lastfmapi lib to fetch recently played tracks.
 
 <br>
 
