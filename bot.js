@@ -77,15 +77,27 @@ bot.on("msg", async (ctx) => {
         user: ctx.msg.text,
         reverse: true,
       });
-      await stream.pipe(
-        through.obj(async function (track, enc, callback) {
-          console.log(track.title);
-          await ctx.reply(`<b>${track.title} - ${track.title}</b>`, {
-            parse_mode: "HTML",
-          });
-          callback();
-        })
-      );
+      const passThroughStream = new require("stream").Transform({
+        objectMode: true,
+      });
+
+      passThroughStream._transform = async function (track, enc, callback) {
+        console.log(track.title);
+        await ctx.reply(`<b>${track.title} - ${track.title}</b>`, {
+          parse_mode: "HTML",
+        });
+        callback();
+      };
+
+      passThroughStream.on("finish", () => {
+        console.log("Finished");
+      });
+
+      stream.pipe(passThroughStream, { end: false });
+
+      setTimeout(() => {
+        passThroughStream.end();
+      }, 3000);
     } catch (error) {
       if (error instanceof GrammyError) {
         if (error.message.includes("Forbidden: bot was blocked by the user")) {
