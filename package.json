@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "grammy": "^1.14.1",
+    "lastfmexportstream": "^0.0.4",
+    "through2": "^4.0.2"
+  }
+}
