@@ -1,22 +1,11 @@
 require("dotenv").config();
 const LastFmNode = require("lastfmapi");
-const { Bot, HttpError, GrammyError } = require("grammy");
+const { Bot, webhookCallback, HttpError, GrammyError } = require("grammy");
 const https = require("https");
 
 // Bot
 
 const bot = new Bot(process.env.BOT_TOKEN);
-
-// Response
-
-async function responseTime(ctx, next) {
-  const before = Date.now();
-  await next();
-  const after = Date.now();
-  console.log(`Response time: ${after - before} ms`);
-}
-
-bot.use(responseTime);
 
 // Auth
 
@@ -28,46 +17,13 @@ const lastfm = new LastFmNode({
 // Commands
 
 bot.command("start", async (ctx) => {
-  const options = {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  };
-  const body = {
-    userId: ctx.from.id,
-  };
-  const req = https.request(
-    "https://users-weld.vercel.app/user",
-    options,
-    (res) => {
-      let data = "";
-      res.on("data", (chunk) => {
-        data += chunk;
-      });
-      res.on("end", () => {
-        if (res.statusCode === 200) {
-          if (data.includes("User not found")) {
-            console.log("User not found");
-          } else {
-            console.log("User found");
-          }
-        } else {
-          console.log("Contacting API failed");
-        }
-      });
-    }
-  );
-  req.on("error", (error) => {
-    console.error(error);
-    console.log("Contacting API failed");
-  });
-  req.write(JSON.stringify(body));
-  req.end();
   await ctx
-    .reply("*Welcome!* ✨\n_Send a Last.fm username._", {
-      parse_mode: "Markdown",
-    })
+    .reply(
+      "*Welcome!* ✨\n_Send a Last.fm username to get recent plays.\nYou can also use inline by @recentplaybot <username>._",
+      {
+        parse_mode: "Markdown",
+      }
+    )
     .then(console.log(`New user added:`, ctx.from))
     .catch((error) => console.error(error));
 });
@@ -119,7 +75,11 @@ bot.on("msg", async (ctx) => {
                 reject(err);
               } else {
                 const nowPlaying = data.track[0];
-                resolve(nowPlaying);
+                if (nowPlaying["@attr"] && nowPlaying["@attr"].nowplaying) {
+                  resolve(nowPlaying);
+                } else {
+                  resolve(null);
+                }
               }
             }
           );
@@ -145,24 +105,28 @@ bot.on("msg", async (ctx) => {
           );
         });
       }
-      (async () => {
-        try {
-          /*const nowPlaying = await getNowPlaying();
-          await ctx.reply(
-            `Now Playing: ${nowPlaying.name} by ${nowPlaying.artist["#text"]}`
-          );*/
-          const lastPlayed = await getLastPlayed();
-          await ctx.reply(
-            `<b>🎶 Here are <a href="https://last.fm/user/${ctx.msg.text}">${
-              ctx.msg.text
-            }'s</a> recent listens:
+      const nowPlaying = await getNowPlaying();
+      if (!nowPlaying) {
+      } else {
+        await ctx.reply(
+          `<b>🎧 Currently listening to: ${nowPlaying.name} by ${nowPlaying.artist["#text"]}</b>`,
+          { parse_mode: "HTML" }
+        );
+      }
+      const lastPlayed = await getLastPlayed();
+      await ctx
+        .reply(
+          `<b>🎶 Here are <a href="https://last.fm/user/${ctx.msg.text}">${
+            ctx.msg.text
+          }'s</a> recent listens:
             \n${lastPlayed.join("\n")}</b>`,
-            { parse_mode: "HTML" }
-          );
-        } catch (err) {
-          console.error("Error:", err.message);
-        }
-      })();
+          { parse_mode: "HTML" }
+        )
+        .then(
+          console.log(
+            `Recent played list for ${ctx.msg.text} sent successfully to ${ctx.from.id}`
+          )
+        );
     } catch (error) {
       if (error instanceof GrammyError) {
         if (error.message.includes("Forbidden: bot was blocked by the user")) {
@@ -193,6 +157,55 @@ bot.on("msg", async (ctx) => {
   }
 });
 
+// Inline
+
+const { promisify } = require("util");
+const getRecentTracks = promisify(
+  lastfm.user.getRecentTracks.bind(lastfm.user)
+);
+let counter = 1;
+
+bot.on("inline_query", async (ctx) => {
+  const query = ctx.inlineQuery.query;
+  const username = query;
+
+  // Get recent tracks from Last.fm API
+  try {
+    const recentTracks = await getRecentTracks({
+      user: username,
+      limit: 5,
+    });
+
+    const results = [];
+
+    for (const track of recentTracks.track) {
+      const artist = track.artist["#text"];
+      const title = track.name;
+      const album = track.album["#text"];
+      const url = track.url;
+
+      const message = `<a href = "${url}">${title}</a> by ${artist}\n<i>Album: ${album}</i>`;
+
+      results.push({
+        type: "article",
+        id: counter,
+        title: title,
+        description: artist,
+        input_message_content: {
+          message_text: message,
+          parse_mode: "HTML",
+          disable_web_page_preview: false,
+        },
+      });
+
+      counter++;
+    }
+    await ctx.answerInlineQuery(results);
+  } catch (err) {
+    console.error(err);
+  }
+});
+
 // Error
 
 bot.catch((err) => {
@@ -220,4 +233,4 @@ bot.catch((err) => {
 
 // Run
 
-bot.start();
+export default webhookCallback(bot, "http");
