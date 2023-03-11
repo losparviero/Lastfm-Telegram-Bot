@@ -17,6 +17,14 @@ const lastfm = new LastFmNode({
 // Commands
 
 bot.command("start", async (ctx) => {
+  if (!ctx.chat.type == "private") {
+    await bot.api.sendMessage(
+      ctx.chat.id,
+      "*Channels and groups are not supported presently.*",
+      { parse_mode: "Markdown" }
+    );
+    return;
+  }
   await ctx
     .reply(
       "*Welcome!* ✨\n_Send a Last.fm username to get recent plays.\nYou can also use inline by @recentplaybot <username>._",
@@ -24,8 +32,7 @@ bot.command("start", async (ctx) => {
         parse_mode: "Markdown",
       }
     )
-    .then(console.log(`New user added:`, ctx.from))
-    .catch((error) => console.error(error));
+    .then(console.log(`New user added:`, ctx.from));
 });
 
 bot.command("help", async (ctx) => {
@@ -34,13 +41,12 @@ bot.command("help", async (ctx) => {
       "*@anzubo Project.*\n\n_This bot sends the recent listens for a Last.fm profile.\nSend a username to try it out!_",
       { parse_mode: "Markdown" }
     )
-    .then(console.log("Help command sent to", ctx.from.id))
-    .catch((error) => console.error(error));
+    .then(console.log("Help command sent to", ctx.chat.id));
 });
 
 // Messages
 
-bot.on("msg", async (ctx) => {
+bot.on("message", async (ctx) => {
   // Logging
 
   const from = ctx.from;
@@ -62,6 +68,7 @@ bot.on("msg", async (ctx) => {
   } else {
     try {
       const username = ctx.msg.text;
+
       async function getNowPlaying() {
         return new Promise((resolve, reject) => {
           lastfm.user.getRecentTracks(
@@ -85,6 +92,7 @@ bot.on("msg", async (ctx) => {
           );
         });
       }
+
       async function getLastPlayed() {
         return new Promise((resolve, reject) => {
           lastfm.user.getRecentTracks(
@@ -105,14 +113,9 @@ bot.on("msg", async (ctx) => {
           );
         });
       }
-      const nowPlaying = await getNowPlaying();
-      if (!nowPlaying) {
-      } else {
-        await ctx.reply(
-          `<b>🎧 Currently listening to: ${nowPlaying.name} by ${nowPlaying.artist["#text"]}</b>`,
-          { parse_mode: "HTML" }
-        );
-      }
+
+      // Recent
+
       const lastPlayed = await getLastPlayed();
       await ctx
         .reply(
@@ -127,6 +130,18 @@ bot.on("msg", async (ctx) => {
             `Recent played list for ${ctx.msg.text} sent successfully to ${ctx.from.id}`
           )
         );
+
+      // Current
+
+      const nowPlaying = await getNowPlaying();
+      if (!nowPlaying) {
+        return;
+      } else {
+        await ctx.reply(
+          `<b>🎧 Currently listening to: ${nowPlaying.name} by ${nowPlaying.artist["#text"]}</b>`,
+          { parse_mode: "HTML" }
+        );
+      }
     } catch (error) {
       if (error instanceof GrammyError) {
         if (error.message.includes("Forbidden: bot was blocked by the user")) {
