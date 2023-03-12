@@ -38,7 +38,7 @@ bot.command("start", async (ctx) => {
 bot.command("help", async (ctx) => {
   await ctx
     .reply(
-      "*@anzubo Project.*\n\n_This bot sends the recent listens for a Last.fm profile.\nSend a username to try it out!_",
+      "*@anzubo Project.*\n\n_This bot sends recent listens for a Last.fm profile.\nSend a username to try it out!_",
       { parse_mode: "Markdown" }
     )
     .then(console.log("Help command sent to", ctx.chat.id));
