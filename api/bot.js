@@ -69,6 +69,8 @@ bot.on("message", async (ctx) => {
     try {
       const username = ctx.msg.text;
 
+      // Lastfm
+
       async function getNowPlaying() {
         return new Promise((resolve, reject) => {
           lastfm.user.getRecentTracks(
@@ -185,6 +187,7 @@ bot.on("inline_query", async (ctx) => {
   const username = query;
 
   // Get recent tracks from Last.fm API
+
   try {
     const recentTracks = await getRecentTracks({
       user: username,
@@ -196,10 +199,10 @@ bot.on("inline_query", async (ctx) => {
     for (const track of recentTracks.track) {
       const artist = track.artist["#text"];
       const title = track.name;
-      const album = track.album["#text"];
+      //const album = track.album["#text"];
       const url = track.url;
 
-      const message = `<a href = "${url}">${title}</a> by ${artist}\n${album}`;
+      const message = `<a href = "${url}">${title}</a> by ${artist}`;
 
       results.push({
         type: "article",
