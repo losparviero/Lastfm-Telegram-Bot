@@ -196,10 +196,10 @@ bot.on("inline_query", async (ctx) => {
     for (const track of recentTracks.track) {
       const artist = track.artist["#text"];
       const title = track.name;
-      //const album = track.album["#text"];
+      const album = track.album["#text"];
       const url = track.url;
 
-      const message = `<a href = "${url}">${title}</a> by ${artist}\n`;
+      const message = `<a href = "${url}">${title}</a> by ${artist}\n${album}`;
 
       results.push({
         type: "article",
