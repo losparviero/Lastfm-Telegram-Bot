@@ -140,7 +140,7 @@ bot.on("message", async (ctx) => {
         return;
       } else {
         await ctx.reply(
-          `<b>🎧 Currently listening to: ${nowPlaying.name} by ${nowPlaying.artist["#text"]}</b>`,
+          `<b>🎧 Currently listening to:\n${nowPlaying.name} by ${nowPlaying.artist["#text"]}</b>`,
           { parse_mode: "HTML" }
         );
       }
