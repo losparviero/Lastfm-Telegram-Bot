@@ -218,7 +218,7 @@ bot.on("inline_query", async (ctx) => {
         //const album = track.album["#text"];
         const url = track.url;
 
-        const message = `${username} is listening ton\n<a href = "${url}">${title}</a> by ${artist}`;
+        const message = `<i><b>${username}</b> is listening to\n<a href = "${url}">${title}</a> by ${artist}</i>`;
 
         results.push({
           type: "article",
