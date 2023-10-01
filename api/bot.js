@@ -125,7 +125,7 @@ bot.on("message", async (ctx) => {
             ctx.msg.text
           }'s</a> recent listens:
             \n${lastPlayed.join("\n")}</b>`,
-          { parse_mode: "HTML" }
+          { parse_mode: "HTML", disable_web_page_preview: "true" }
         )
         .then(
           console.log(
@@ -202,7 +202,7 @@ bot.on("inline_query", async (ctx) => {
       //const album = track.album["#text"];
       const url = track.url;
 
-      const message = `<a href = "${url}">${title}</a> by ${artist}`;
+      const message = `${username} is listening to <a href = "${url}">${title}</a> by ${artist}`;
 
       results.push({
         type: "article",
