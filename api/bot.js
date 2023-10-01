@@ -186,41 +186,58 @@ bot.on("inline_query", async (ctx) => {
   const query = ctx.inlineQuery.query;
   const username = query;
 
-  // Get recent tracks from Last.fm API
-
-  try {
-    const recentTracks = await getRecentTracks({
-      user: username,
-      limit: 5,
-    });
-
-    const results = [];
-
-    for (const track of recentTracks.track) {
-      const artist = track.artist["#text"];
-      const title = track.name;
-      //const album = track.album["#text"];
-      const url = track.url;
-
-      const message = `${username} is listening to <a href = "${url}">${title}</a> by ${artist}`;
-
-      results.push({
-        type: "article",
-        id: counter,
-        title: title,
-        description: artist,
+  if (ctx.inlineQuery.query.length < 1) {
+    const result = [
+      {
+        type: `article`,
+        id: 0,
+        title: `Instagram Downloader by @anzubo`,
+        description: `Hi ${ctx.inlineQuery.from.first_name} 👋, no username was detected.`,
         input_message_content: {
-          message_text: message,
-          parse_mode: "HTML",
-          disable_web_page_preview: false,
+          message_text: `_LastFM Recent Plays by @anzubo_ ✨\n\nUsername not detected.\nPlease type a valid LastFM username.`,
+          parse_mode: "Markdown",
         },
+      },
+    ];
+
+    await ctx.answerInlineQuery(result);
+  } else {
+    // Get recent tracks from Last.fm API
+
+    try {
+      const recentTracks = await getRecentTracks({
+        user: username,
+        limit: 5,
       });
 
-      counter++;
+      const results = [];
+
+      for (const track of recentTracks.track) {
+        const artist = track.artist["#text"];
+        const title = track.name;
+        //const album = track.album["#text"];
+        const url = track.url;
+
+        const message = `${username} is listening ton\n<a href = "${url}">${title}</a> by ${artist}`;
+
+        results.push({
+          type: "article",
+          id: counter,
+          title: title,
+          description: artist,
+          input_message_content: {
+            message_text: message,
+            parse_mode: "HTML",
+            disable_web_page_preview: false,
+          },
+        });
+
+        counter++;
+      }
+      await ctx.answerInlineQuery(results);
+    } catch (err) {
+      console.error(err);
     }
-    await ctx.answerInlineQuery(results);
-  } catch (err) {
-    console.error(err);
   }
 });
 
