@@ -191,7 +191,7 @@ bot.on("inline_query", async (ctx) => {
       {
         type: `article`,
         id: 0,
-        title: `Instagram Downloader by @anzubo`,
+        title: `LastFM Recent Plays by @anzubo`,
         description: `Hi ${ctx.inlineQuery.from.first_name} 👋, no username was detected.`,
         input_message_content: {
           message_text: `_LastFM Recent Plays by @anzubo_ ✨\n\nUsername not detected.\nPlease type a valid LastFM username.`,
